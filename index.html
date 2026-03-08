@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portuguese Flashcards</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#1a73e8">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="header-title">Português</h1>
+            <div class="header-actions">
+                <button id="dark-toggle" class="icon-btn" title="Toggle dark mode">🌙</button>
+                <button id="stats-btn" class="icon-btn" title="Statistics">📊</button>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+            <div class="progress-info">
+                <span class="progress-label">Words Learned</span>
+                <span class="progress-count" id="progress-count">0 / 460</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="daily-goal">
+                <span class="goal-label">Daily Goal</span>
+                <span class="goal-count" id="goal-count">0 / 20</span>
+            </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="flashcard">Flashcards</button>
+            <button class="mode-tab" data-mode="quiz">Quiz</button>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <select id="filter-select" class="filter-select">
+                <option value="all">All Words (460)</option>
+                <option value="function">Function Words (60)</option>
+                <option value="verb">Verbs (150)</option>
+                <option value="noun">Nouns (50)</option>
+                <option value="adjective">Adjectives (100)</option>
+                <option value="adverb">Adverbs (50)</option>
+                <option value="pronoun">Pronouns (8)</option>
+                <option value="article">Articles (8)</option>
+                <option value="preposition">Prepositions (10)</option>
+                <option value="conjunction">Conjunctions (9)</option>
+            </select>
+        </div>
+
+        <!-- Flashcard Mode -->
+        <div id="flashcard-mode" class="mode-content active">
+            <div class="card-container">
+                <div class="card" id="flashcard">
+                    <div class="card-front">
+                        <div class="card-word" id="card-word">carregar</div>
+                        <div class="card-hint" id="card-hint">Tap to reveal</div>
+                        <button class="speak-btn" id="speak-word" title="Hear pronunciation">🔊</button>
+                    </div>
+                    <div class="card-back">
+                        <div class="card-answer" id="card-answer">to run</div>
+                        <div class="card-type" id="card-type">verb</div>
+                        <div class="card-example" id="card-example">
+                            <p class="example-pt" id="example-pt">Eu corro no parque.</p>
+                            <p class="example-en" id="example-en">I run in the park.</p>
+                        </div>
+                        <button class="speak-btn speak-example" id="speak-example" title="Hear example sentence">🔊 Example</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions" id="card-actions">
+                <button class="rating-btn missed" data-rating="missed">
+                    <span class="rating-icon">❌</span>
+                    <span class="rating-label">Missed</span>
+                </button>
+                <button class="rating-btn almost" data-rating="almost">
+                    <span class="rating-icon">🔶</span>
+                    <span class="rating-label">Almost</span>
+                </button>
+                <button class="rating-btn gotit" data-rating="gotit">
+                    <span class="rating-icon">✅</span>
+                    <span class="rating-label">Got it</span>
+                </button>
+            </div>
+
+            <div class="card-nav">
+                <button class="nav-btn" id="prev-card">← Previous</button>
+                <button class="nav-btn" id="next-card">Next →</button>
+            </div>
+        </div>
+
+        <!-- Quiz Mode -->
+        <div id="quiz-mode" class="mode-content">
+            <div class="quiz-container">
+                <div class="quiz-progress">
+                    <span class="quiz-count" id="quiz-count">Question 1 of 10</span>
+                    <span class="quiz-score" id="quiz-score">Score: 0%</span>
+                </div>
+
+                <div class="quiz-question">
+                    <div class="question-word" id="question-word">casa</div>
+                    <div class="question-hint" id="question-hint">Select the correct translation</div>
+                </div>
+
+                <div class="quiz-options" id="quiz-options">
+                    <!-- Options generated dynamically -->
+                </div>
+
+                <div class="quiz-feedback" id="quiz-feedback">
+                    <div class="feedback-icon" id="feedback-icon"></div>
+                    <div class="feedback-text" id="feedback-text"></div>
+                </div>
+
+                <button class="quiz-next" id="quiz-next" style="display: none;">Next Question →</button>
+            </div>
+        </div>
+
+        <!-- Stats Modal -->
+        <div id="stats-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Statistics</h2>
+                    <button class="modal-close" id="stats-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-total">0</div>
+                            <div class="stat-label">Total Words</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-learned">0</div>
+                            <div class="stat-label">Words Learned</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-streak">0</div>
+                            <div class="stat-label">Day Streak</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-accuracy">0%</div>
+                            <div class="stat-label">Accuracy</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-section">
+                        <h3>By Word Type</h3>
+                        <div id="stats-by-type">
+                            <!-- Generated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="stats-section">
+                        <h3>Review Queue</h3>
+                        <div class="review-queue">
+                            <div class="queue-item">
+                                <span>Due today</span>
+                                <span class="queue-count" id="queue-due">0</span>
+                            </div>
+                            <div class="queue-item">
+                                <span>Learning</span>
+                                <span class="queue-count" id="queue-learning">0</span>
+                            </div>
+                            <div class="queue-item">
+                                <span>Mastered</span>
+                                <span class="queue-count" id="queue-mastered">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="reset-btn" id="reset-progress">Reset All Progress</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset Confirmation Modal -->
+        <div id="reset-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h2>Reset Progress?</h2>
+                    <button class="modal-close" id="reset-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>This will delete all your progress, statistics, and spaced repetition data. This cannot be undone.</p>
+                    <div class="reset-actions">
+                        <button class="cancel-btn" id="reset-cancel">Cancel</button>
+                        <button class="confirm-btn" id="reset-confirm">Reset Everything</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/sm2.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
