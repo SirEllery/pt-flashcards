@@ -1,60 +1,25 @@
 /**
  * Text-to-Speech for Brazilian Portuguese
- * Uses Web Speech API with pt-BR voice
+ * Uses Google Translate TTS for high-quality neural voice
+ * Falls back to Web Speech API only if Google TTS fails
  */
 
 const Speech = {
-    synth: null,
-    voices: [],
-    ptVoice: null,
+    audio: null,
     initialized: false,
 
-    /**
-     * Initialize speech synthesis and load voices
-     */
     init() {
-        if (!('speechSynthesis' in window)) {
-            console.warn('Speech synthesis not supported');
-            return false;
-        }
-
-        this.synth = window.speechSynthesis;
-        
-        // Load voices
-        const loadVoices = () => {
-            this.voices = this.synth.getVoices();
-            
-            // Find Brazilian Portuguese voice
-            this.ptVoice = this.voices.find(voice => 
-                voice.lang === 'pt-BR' || 
-                voice.lang === 'pt_BR' ||
-                (voice.lang.startsWith('pt') && voice.name.includes('Brazil'))
-            ) || this.voices.find(voice => 
-                voice.lang.startsWith('pt')
-            );
-
-            this.initialized = true;
-            console.log('Speech initialized, pt-BR voice:', this.ptVoice?.name || 'default');
-        };
-
-        loadVoices();
-        
-        // Chrome loads voices asynchronously
-        if (this.synth.onvoiceschanged !== undefined) {
-            this.synth.onvoiceschanged = loadVoices;
-        }
-
+        this.audio = new Audio();
+        this.initialized = true;
+        console.log('Speech initialized (Google Translate TTS)');
         return true;
     },
 
     /**
      * Speak a word or phrase in Brazilian Portuguese
-     * @param {string} text - Text to speak
-     * @param {Function} onComplete - Callback when finished
      */
     speak(text, onComplete) {
-        if (!this.isSupported()) {
-            console.warn('Speech synthesis not supported');
+        if (!text) {
             if (onComplete) onComplete();
             return;
         }
@@ -63,38 +28,87 @@ const Speech = {
             this.init();
         }
 
-        // Cancel any ongoing speech
-        this.synth.cancel();
-
         try {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'pt-BR';
-            utterance.rate = 0.9; // Slightly slower for clarity
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-
-            if (this.ptVoice) {
-                utterance.voice = this.ptVoice;
+            // Stop any current audio
+            if (this.audio) {
+                this.audio.pause();
+                this.audio.currentTime = 0;
             }
 
-            if (onComplete) {
-                utterance.onend = onComplete;
+            // Google Translate TTS — same engine as the Google Translate app
+            var encoded = encodeURIComponent(text);
+            var url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=pt-BR&q=' + encoded;
+
+            this.audio = new Audio(url);
+
+            this.audio.onended = function() {
+                if (onComplete) onComplete();
+            };
+
+            this.audio.onerror = function() {
+                console.warn('Google TTS failed, trying Web Speech API');
+                Speech._webSpeechFallback(text, onComplete);
+            };
+
+            var playPromise = this.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function() {
+                    console.warn('Google TTS play rejected, trying Web Speech API');
+                    Speech._webSpeechFallback(text, onComplete);
+                });
             }
 
-            this.synth.speak(utterance);
         } catch (e) {
-            console.warn('Speech synthesis error:', e);
-            if (onComplete) onComplete();
+            console.warn('Speech error:', e);
+            this._webSpeechFallback(text, onComplete);
         }
     },
 
     /**
-     * Check if speech is supported
+     * Fallback only if Google TTS is blocked
      */
-    isSupported() {
-        return 'speechSynthesis' in window;
+    _webSpeechFallback: function(text, onComplete) {
+        if (!('speechSynthesis' in window)) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        var synth = window.speechSynthesis;
+        synth.cancel();
+
+        var utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        var voices = synth.getVoices();
+        var ptVoice = null;
+        for (var i = 0; i < voices.length; i++) {
+            if (voices[i].lang === 'pt-BR' || voices[i].lang === 'pt_BR') {
+                ptVoice = voices[i];
+                break;
+            }
+        }
+        if (!ptVoice) {
+            for (var i = 0; i < voices.length; i++) {
+                if (voices[i].lang.indexOf('pt') === 0) {
+                    ptVoice = voices[i];
+                    break;
+                }
+            }
+        }
+        if (ptVoice) utterance.voice = ptVoice;
+
+        utterance.onend = function() { if (onComplete) onComplete(); };
+        utterance.onerror = function() { if (onComplete) onComplete(); };
+
+        synth.speak(utterance);
+    },
+
+    isSupported: function() {
+        return true;
     }
 };
 
-// Export for use in app
 window.Speech = Speech;
