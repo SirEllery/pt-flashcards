@@ -53,6 +53,12 @@ const Speech = {
      * @param {Function} onComplete - Callback when finished
      */
     speak(text, onComplete) {
+        if (!this.isSupported()) {
+            console.warn('Speech synthesis not supported');
+            if (onComplete) onComplete();
+            return;
+        }
+
         if (!this.initialized) {
             this.init();
         }
@@ -60,21 +66,26 @@ const Speech = {
         // Cancel any ongoing speech
         this.synth.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 0.9; // Slightly slower for clarity
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
+        try {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 0.9; // Slightly slower for clarity
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
 
-        if (this.ptVoice) {
-            utterance.voice = this.ptVoice;
+            if (this.ptVoice) {
+                utterance.voice = this.ptVoice;
+            }
+
+            if (onComplete) {
+                utterance.onend = onComplete;
+            }
+
+            this.synth.speak(utterance);
+        } catch (e) {
+            console.warn('Speech synthesis error:', e);
+            if (onComplete) onComplete();
         }
-
-        if (onComplete) {
-            utterance.onend = onComplete;
-        }
-
-        this.synth.speak(utterance);
     },
 
     /**

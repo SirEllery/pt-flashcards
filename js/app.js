@@ -178,7 +178,10 @@ const App = {
      * Get the current word
      */
     getCurrentWord() {
-        return this.words[this.state.currentWordIndex];
+        if (!this.words || this.words.length === 0) {
+            return WORDS[0]; // Fallback to all words
+        }
+        return this.words[this.state.currentWordIndex] || WORDS[0];
     },
 
     /**
@@ -342,7 +345,7 @@ const App = {
             ? Math.round((this.stats.correctReviews / this.stats.totalReviews) * 100) 
             : 0;
 
-        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-total').textContent = WORDS.length;
         document.getElementById('stat-learned').textContent = this.stats.wordsLearned;
         document.getElementById('stat-streak').textContent = this.stats.streak;
         document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
@@ -355,40 +358,15 @@ const App = {
 
         // By type stats
         const byType = {};
-        WORD_TYPES.verb.forEach(w => {
-            if (!byType.verb) byType.verb = { total: 0, learned: 0 };
-            byType.verb.total++;
-            const card = this.cards[w.id];
-            if (card && card.repetitions >= 5 && card.interval >= 30) {
-                byType.verb.learned++;
-            }
-        });
-
-        WORD_TYPES.noun.forEach(w => {
-            if (!byType.noun) byType.noun = { total: 0, learned: 0 };
-            byType.noun.total++;
-            const card = this.cards[w.id];
-            if (card && card.repetitions >= 5 && card.interval >= 30) {
-                byType.noun.learned++;
-            }
-        });
-
-        WORD_TYPES.adjective.forEach(w => {
-            if (!byType.adjective) byType.adjective = { total: 0, learned: 0 };
-            byType.adjective.total++;
-            const card = this.cards[w.id];
-            if (card && card.repetitions >= 5 && card.interval >= 30) {
-                byType.adjective.learned++;
-            }
-        });
-
-        WORD_TYPES.adverb.forEach(w => {
-            if (!byType.adverb) byType.adverb = { total: 0, learned: 0 };
-            byType.adverb.total++;
-            const card = this.cards[w.id];
-            if (card && card.repetitions >= 5 && card.interval >= 30) {
-                byType.adverb.learned++;
-            }
+        ['verb', 'noun', 'adjective', 'adverb'].forEach(type => {
+            const typeWords = WORD_TYPES[type] || [];
+            byType[type] = { total: typeWords.length, learned: 0 };
+            typeWords.forEach(w => {
+                const card = this.cards[w.id];
+                if (card && card.repetitions >= 5 && card.interval >= 30) {
+                    byType[type].learned++;
+                }
+            });
         });
 
         document.getElementById('stats-by-type').innerHTML = Object.entries(byType).map(([type, data]) => `
