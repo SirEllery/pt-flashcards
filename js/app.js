@@ -6,7 +6,7 @@
 const App = {
     // State
     state: {
-        currentMode: 'flashcard', // 'flashcard' or 'quiz'
+        currentMode: 'flashcard', // 'flashcard', 'quiz', or 'sounds'
         currentFilter: 'all',
         currentWordIndex: 0,
         isFlipped: false,
@@ -16,6 +16,10 @@ const App = {
             totalQuestions: 10,
             selectedOption: null,
             answered: false
+        },
+        soundsState: {
+            currentSoundIndex: 0,
+            showingDetail: false
         },
         dailyGoal: 20,
         wordsStudiedToday: 0,
@@ -558,6 +562,9 @@ const App = {
                 } else if (mode === 'quiz') {
                     document.getElementById('quiz-mode').classList.add('active');
                     this.startQuiz();
+                } else if (mode === 'sounds') {
+                    document.getElementById('sounds-mode').classList.add('active');
+                    this.renderSoundsList();
                 }
             });
         });
@@ -614,6 +621,26 @@ const App = {
             localStorage.setItem('pt-flashcards-theme', isDark ? 'light' : 'dark');
         });
 
+        // Sounds mode navigation
+        document.getElementById('sound-back-btn').addEventListener('click', () => {
+            this.renderSoundsList();
+        });
+        document.getElementById('prev-sound').addEventListener('click', () => {
+            this.navigateSound(-1);
+        });
+        document.getElementById('next-sound').addEventListener('click', () => {
+            this.navigateSound(1);
+        });
+        document.getElementById('speak-sound').addEventListener('click', () => {
+            const sound = PRONUNCIATION_CARDS[this.state.soundsState.currentSoundIndex];
+            if (sound && sound.examples && sound.examples.length > 0) {
+                // Speak the first few example words slowly
+                sound.examples.slice(0, 3).forEach((ex, i) => {
+                    setTimeout(() => Speech.speak(ex.pt), i * 800);
+                });
+            }
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
@@ -666,6 +693,99 @@ const App = {
         
         document.body.setAttribute('data-theme', theme);
         document.getElementById('dark-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    },
+
+    /**
+     * Render sounds list view
+     */
+    renderSoundsList() {
+        this.state.soundsState.showingDetail = false;
+        document.getElementById('sound-list-view').classList.remove('hidden');
+        document.getElementById('sound-detail-view').classList.add('hidden');
+
+        // Render each category
+        ['nasal', 'consonant', 'vowel'].forEach(category => {
+            const grid = document.getElementById(`sound-grid-${category}`);
+            const sounds = SOUNDS_BY_CATEGORY[category] || [];
+            
+            grid.innerHTML = sounds.map(sound => `
+                <div class="sound-card" data-id="${sound.id}">
+                    <div class="sound-card-sound">${sound.sound}</div>
+                    <div class="sound-card-title">${sound.title}</div>
+                    <div class="sound-difficulty-dots">
+                        ${[1,2,3,4,5].map(i => `
+                            <div class="difficulty-dot ${i <= sound.difficulty ? 'filled' : ''} ${i <= sound.difficulty && sound.difficulty >= 4 ? 'hard' : ''}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            grid.querySelectorAll('.sound-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const soundId = card.dataset.id;
+                    this.showSoundDetail(soundId);
+                });
+            });
+        });
+    },
+
+    /**
+     * Show sound detail view
+     */
+    showSoundDetail(soundId) {
+        const sound = PRONUNCIATION_CARDS.find(s => s.id === soundId);
+        if (!sound) return;
+
+        this.state.soundsState.showingDetail = true;
+        this.state.soundsState.currentSoundIndex = PRONUNCIATION_CARDS.findIndex(s => s.id === soundId);
+
+        document.getElementById('sound-list-view').classList.add('hidden');
+        document.getElementById('sound-detail-view').classList.remove('hidden');
+
+        // Populate detail view
+        document.getElementById('detail-sound').textContent = sound.sound;
+        document.getElementById('detail-title').textContent = sound.title;
+        
+        const diffEl = document.getElementById('detail-difficulty');
+        diffEl.innerHTML = `Difficulty: ${'●'.repeat(sound.difficulty)}${'○'.repeat(5 - sound.difficulty)}`;
+        
+        document.getElementById('detail-sounds-like').textContent = sound.sounds_like;
+        document.getElementById('detail-mouth').textContent = sound.mouth;
+        document.getElementById('detail-mistake').textContent = sound.common_mistake;
+        document.getElementById('detail-tip').textContent = sound.tip;
+
+        // Practice words
+        const examplesEl = document.getElementById('detail-examples');
+        examplesEl.innerHTML = sound.examples.map(ex => `
+            <div class="practice-word-item">
+                <div>
+                    <div class="practice-word-pt">${ex.pt}</div>
+                    <div class="practice-word-en">${ex.en}</div>
+                </div>
+                <button class="speak-btn practice-word-speak" data-word="${ex.pt}">🔊</button>
+            </div>
+        `).join('');
+
+        // Add speak handlers for practice words
+        examplesEl.querySelectorAll('.practice-word-speak').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                Speech.speak(btn.dataset.word);
+            });
+        });
+    },
+
+    /**
+     * Navigate to previous/next sound
+     */
+    navigateSound(direction) {
+        let newIndex = this.state.soundsState.currentSoundIndex + direction;
+        if (newIndex < 0) newIndex = PRONUNCIATION_CARDS.length - 1;
+        if (newIndex >= PRONUNCIATION_CARDS.length) newIndex = 0;
+        
+        const sound = PRONUNCIATION_CARDS[newIndex];
+        this.showSoundDetail(sound.id);
     }
 };
 

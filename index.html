@@ -37,6 +37,7 @@
         <div class="mode-tabs">
             <button class="mode-tab active" data-mode="flashcard">Flashcards</button>
             <button class="mode-tab" data-mode="quiz">Quiz</button>
+            <button class="mode-tab" data-mode="sounds">Sounds</button>
         </div>
 
         <!-- Filter Section -->
@@ -99,6 +100,96 @@
 
         <!-- Quiz Mode -->
         <div id="quiz-mode" class="mode-content">
+            <div class="quiz-container">
+                <div class="quiz-progress">
+                    <span class="quiz-count" id="quiz-count">Question 1 of 10</span>
+                    <span class="quiz-score" id="quiz-score">Score: 0%</span>
+                </div>
+
+                <div class="quiz-question">
+                    <div class="question-word" id="question-word">casa</div>
+                    <div class="question-hint" id="question-hint">Select the correct translation</div>
+                </div>
+
+                <div class="quiz-options" id="quiz-options">
+                    <!-- Options generated dynamically -->
+                </div>
+
+                <div class="quiz-feedback" id="quiz-feedback">
+                    <div class="feedback-icon" id="feedback-icon"></div>
+                    <div class="feedback-text" id="feedback-text"></div>
+                </div>
+
+                <button class="quiz-next" id="quiz-next" style="display: none;">Next Question →</button>
+            </div>
+        </div>
+
+        <!-- Sounds Mode -->
+        <div id="sounds-mode" class="mode-content">
+            <!-- Sound List View -->
+            <div id="sound-list-view">
+                <div class="sound-category" id="sound-category-nasal">
+                    <h3 class="sound-category-title">Nasal Sounds</h3>
+                    <div class="sound-grid" id="sound-grid-nasal"></div>
+                </div>
+                <div class="sound-category" id="sound-category-consonant">
+                    <h3 class="sound-category-title">Consonants</h3>
+                    <div class="sound-grid" id="sound-grid-consonant"></div>
+                </div>
+                <div class="sound-category" id="sound-category-vowel">
+                    <h3 class="sound-category-title">Vowels</h3>
+                    <div class="sound-grid" id="sound-grid-vowel"></div>
+                </div>
+            </div>
+
+            <!-- Sound Detail View -->
+            <div id="sound-detail-view" class="hidden">
+                <div class="sound-detail-header">
+                    <button class="back-btn" id="sound-back-btn">← Back</button>
+                    <button class="speak-btn speak-sound" id="speak-sound">🔊 Hear Sound</button>
+                </div>
+
+                <div class="sound-detail-card">
+                    <div class="sound-main">
+                        <div class="sound-display" id="detail-sound">ão</div>
+                        <div class="sound-title" id="detail-title">The Nasal ÃO</div>
+                        <div class="sound-difficulty" id="detail-difficulty"></div>
+                    </div>
+
+                    <div class="sound-sections">
+                        <div class="sound-section">
+                            <h4 class="section-title">🔊 What It Sounds Like</h4>
+                            <p class="section-content" id="detail-sounds-like"></p>
+                        </div>
+
+                        <div class="sound-section mouth-section">
+                            <h4 class="section-title">👄 How To Make It</h4>
+                            <p class="section-content mouth-content" id="detail-mouth"></p>
+                        </div>
+
+                        <div class="sound-section">
+                            <h4 class="section-title">⚠️ Common Mistake</h4>
+                            <p class="section-content mistake-content" id="detail-mistake"></p>
+                        </div>
+
+                        <div class="sound-section">
+                            <h4 class="section-title">💡 Practice Tip</h4>
+                            <p class="section-content tip-content" id="detail-tip"></p>
+                        </div>
+
+                        <div class="sound-section">
+                            <h4 class="section-title">📚 Practice Words</h4>
+                            <div class="practice-words" id="detail-examples"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sound-navigation">
+                    <button class="nav-btn" id="prev-sound">← Previous</button>
+                    <button class="nav-btn" id="next-sound">Next →</button>
+                </div>
+            </div>
+        </div>
             <div class="quiz-container">
                 <div class="quiz-progress">
                     <span class="quiz-count" id="quiz-count">Question 1 of 10</span>
@@ -203,6 +294,7 @@
     <script src="js/data.js?v=1"></script>
     <script src="js/sm2.js?v=1"></script>
     <script src="js/speech.js?v=1"></script>
-    <script src="js/app.js?v=1"></script>
+    <script src="js/sounds-data.js?v=1"></script>
+    <script src="js/app.js?v=2"></script>
 </body>
 </html>
