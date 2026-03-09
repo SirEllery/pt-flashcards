@@ -1,25 +1,65 @@
 /**
  * Text-to-Speech for Brazilian Portuguese
- * Uses Google Translate TTS for high-quality neural voice
- * Falls back to Web Speech API only if Google TTS fails
+ * Uses Web Speech API with explicit pt-BR voice selection
  */
 
 const Speech = {
-    audio: null,
+    synth: null,
+    voices: [],
+    ptBrVoice: null,
     initialized: false,
 
     init() {
-        this.audio = new Audio();
-        this.initialized = true;
-        console.log('Speech initialized (Google Translate TTS)');
+        if (!('speechSynthesis' in window)) {
+            console.warn('Speech synthesis not supported');
+            return false;
+        }
+
+        this.synth = window.speechSynthesis;
+
+        var self = this;
+        var loadVoices = function() {
+            self.voices = self.synth.getVoices();
+            
+            // MUST prefer pt-BR (Brazilian) over pt-PT (European Portuguese)
+            // Look for pt-BR first
+            self.ptBrVoice = null;
+            for (var i = 0; i < self.voices.length; i++) {
+                if (self.voices[i].lang === 'pt-BR' || self.voices[i].lang === 'pt_BR') {
+                    self.ptBrVoice = self.voices[i];
+                    break;
+                }
+            }
+            // Only fall back to generic pt if no pt-BR found
+            if (!self.ptBrVoice) {
+                for (var i = 0; i < self.voices.length; i++) {
+                    if (self.voices[i].lang.indexOf('pt') === 0) {
+                        self.ptBrVoice = self.voices[i];
+                        break;
+                    }
+                }
+            }
+
+            self.initialized = true;
+            console.log('Speech initialized, voice:', self.ptBrVoice ? self.ptBrVoice.name + ' (' + self.ptBrVoice.lang + ')' : 'default');
+        };
+
+        loadVoices();
+
+        if (this.synth.onvoiceschanged !== undefined) {
+            this.synth.onvoiceschanged = loadVoices;
+        }
+
         return true;
     },
 
-    /**
-     * Speak a word or phrase in Brazilian Portuguese
-     */
     speak(text, onComplete) {
         if (!text) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        if (!('speechSynthesis' in window)) {
             if (onComplete) onComplete();
             return;
         }
@@ -29,85 +69,33 @@ const Speech = {
         }
 
         try {
-            // Stop any current audio
-            if (this.audio) {
-                this.audio.pause();
-                this.audio.currentTime = 0;
+            var utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            if (this.ptBrVoice) {
+                utterance.voice = this.ptBrVoice;
             }
 
-            // Google Translate TTS — same engine as the Google Translate app
-            var encoded = encodeURIComponent(text);
-            var url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=pt-BR&q=' + encoded;
-
-            this.audio = new Audio(url);
-
-            this.audio.onended = function() {
+            utterance.onend = function() {
                 if (onComplete) onComplete();
             };
 
-            this.audio.onerror = function() {
-                console.warn('Google TTS failed, trying Web Speech API');
-                Speech._webSpeechFallback(text, onComplete);
+            utterance.onerror = function() {
+                if (onComplete) onComplete();
             };
 
-            var playPromise = this.audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(function() {
-                    console.warn('Google TTS play rejected, trying Web Speech API');
-                    Speech._webSpeechFallback(text, onComplete);
-                });
-            }
-
+            this.synth.speak(utterance);
         } catch (e) {
             console.warn('Speech error:', e);
-            this._webSpeechFallback(text, onComplete);
-        }
-    },
-
-    /**
-     * Fallback only if Google TTS is blocked
-     */
-    _webSpeechFallback: function(text, onComplete) {
-        if (!('speechSynthesis' in window)) {
             if (onComplete) onComplete();
-            return;
         }
-
-        var synth = window.speechSynthesis;
-        synth.cancel();
-
-        var utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-
-        var voices = synth.getVoices();
-        var ptVoice = null;
-        for (var i = 0; i < voices.length; i++) {
-            if (voices[i].lang === 'pt-BR' || voices[i].lang === 'pt_BR') {
-                ptVoice = voices[i];
-                break;
-            }
-        }
-        if (!ptVoice) {
-            for (var i = 0; i < voices.length; i++) {
-                if (voices[i].lang.indexOf('pt') === 0) {
-                    ptVoice = voices[i];
-                    break;
-                }
-            }
-        }
-        if (ptVoice) utterance.voice = ptVoice;
-
-        utterance.onend = function() { if (onComplete) onComplete(); };
-        utterance.onerror = function() { if (onComplete) onComplete(); };
-
-        synth.speak(utterance);
     },
 
-    isSupported: function() {
-        return true;
+    isSupported() {
+        return 'speechSynthesis' in window;
     }
 };
 
