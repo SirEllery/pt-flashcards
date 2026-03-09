@@ -634,10 +634,8 @@ const App = {
         document.getElementById('speak-sound').addEventListener('click', () => {
             const sound = PRONUNCIATION_CARDS[this.state.soundsState.currentSoundIndex];
             if (sound && sound.examples && sound.examples.length > 0) {
-                // Speak the first few example words slowly
-                sound.examples.slice(0, 3).forEach((ex, i) => {
-                    setTimeout(() => Speech.speak(ex.pt), i * 800);
-                });
+                // Speak just the first example word so you hear the sound clearly
+                Speech.speak(sound.examples[0].pt);
             }
         });
 
