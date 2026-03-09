@@ -71,7 +71,7 @@ const Speech = {
         try {
             var utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'pt-BR';
-            utterance.rate = 0.9;
+            utterance.rate = 0.75;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
 
