@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio Test</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+button { display: block; width: 100%; padding: 20px; margin: 10px 0; font-size: 18px; border-radius: 12px; border: 2px solid #1a73e8; background: white; cursor: pointer; }
+button:active { background: #e8f0fe; }
+h2 { margin-top: 30px; }
+#log { background: #f5f5f5; padding: 10px; border-radius: 8px; font-size: 12px; white-space: pre-wrap; margin-top: 20px; min-height: 100px; }
+</style>
+</head>
+<body>
+<h1>Audio Test</h1>
+<p>Tap each button. Tell me which ones you can hear.</p>
+
+<h2>Method 1: Web Speech API</h2>
+<button onclick="testWebSpeech()">🔊 Web Speech: "coração"</button>
+
+<h2>Method 2: Google TTS (new Audio)</h2>
+<button onclick="testGoogleAudio()">🔊 Google TTS: "coração"</button>
+
+<h2>Method 3: Google TTS (audio tag)</h2>
+<button onclick="testGoogleTag()">🔊 Google Tag: "coração"</button>
+<audio id="gtts" preload="none"></audio>
+
+<h2>Method 4: Google TTS (iframe)</h2>
+<button onclick="testGoogleIframe()">🔊 Google iframe: "coração"</button>
+<iframe id="ttsframe" style="display:none" allow="autoplay"></iframe>
+
+<h2>Log</h2>
+<div id="log"></div>
+
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+    console.log(msg);
+}
+
+// Method 1: Web Speech API
+function testWebSpeech() {
+    log('Testing Web Speech API...');
+    if (!('speechSynthesis' in window)) {
+        log('ERROR: speechSynthesis not supported');
+        return;
+    }
+    var synth = window.speechSynthesis;
+    var voices = synth.getVoices();
+    log('Available voices: ' + voices.length);
+    
+    var ptVoice = null;
+    for (var i = 0; i < voices.length; i++) {
+        if (voices[i].lang.indexOf('pt') === 0) {
+            log('Found pt voice: ' + voices[i].name + ' (' + voices[i].lang + ')');
+            if (!ptVoice) ptVoice = voices[i];
+        }
+    }
+    
+    var u = new SpeechSynthesisUtterance('coração');
+    u.lang = 'pt-BR';
+    u.rate = 0.9;
+    if (ptVoice) {
+        u.voice = ptVoice;
+        log('Using voice: ' + ptVoice.name);
+    } else {
+        log('No pt voice found, using default');
+    }
+    u.onstart = function() { log('Web Speech: STARTED playing'); };
+    u.onend = function() { log('Web Speech: FINISHED'); };
+    u.onerror = function(e) { log('Web Speech ERROR: ' + e.error); };
+    synth.speak(u);
+}
+
+// Method 2: Google TTS via new Audio()
+function testGoogleAudio() {
+    log('Testing Google TTS (new Audio)...');
+    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=pt-BR&q=' + encodeURIComponent('coração');
+    log('URL: ' + url);
+    var a = new Audio(url);
+    a.oncanplaythrough = function() { log('Google Audio: CAN PLAY'); };
+    a.onplay = function() { log('Google Audio: STARTED playing'); };
+    a.onended = function() { log('Google Audio: FINISHED'); };
+    a.onerror = function() { log('Google Audio ERROR: ' + (a.error ? a.error.code + ' ' + a.error.message : 'unknown')); };
+    var p = a.play();
+    if (p) {
+        p.then(function() { log('Google Audio: play() resolved OK'); })
+         .catch(function(e) { log('Google Audio play() REJECTED: ' + e.message); });
+    }
+}
+
+// Method 3: Google TTS via existing audio tag
+function testGoogleTag() {
+    log('Testing Google TTS (audio tag)...');
+    var a = document.getElementById('gtts');
+    a.src = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=pt-BR&q=' + encodeURIComponent('coração');
+    a.oncanplaythrough = function() { log('Google Tag: CAN PLAY'); };
+    a.onplay = function() { log('Google Tag: STARTED playing'); };
+    a.onended = function() { log('Google Tag: FINISHED'); };
+    a.onerror = function() { log('Google Tag ERROR: ' + (a.error ? a.error.code + ' ' + a.error.message : 'unknown')); };
+    var p = a.play();
+    if (p) {
+        p.then(function() { log('Google Tag: play() resolved OK'); })
+         .catch(function(e) { log('Google Tag play() REJECTED: ' + e.message); });
+    }
+}
+
+// Method 4: Google TTS via iframe
+function testGoogleIframe() {
+    log('Testing Google TTS (iframe)...');
+    var url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=pt-BR&q=' + encodeURIComponent('coração');
+    document.getElementById('ttsframe').src = url;
+    log('iframe src set, should auto-play');
+}
+
+// Pre-load voices
+if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = function() {
+            log('Voices loaded: ' + speechSynthesis.getVoices().length);
+        };
+    }
+}
+log('Page loaded. Tap buttons to test.');
+</script>
+</body>
+</html>
